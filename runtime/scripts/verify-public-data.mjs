@@ -1,4 +1,4 @@
-import {readFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve(process.argv[2]??new URL('../..',import.meta.url).pathname);
@@ -17,4 +17,7 @@ for(const [role,f]of Object.entries(local.files)){
  const d=JSON.parse(b);if(role==='snapshot'){if(d.meta.runId!==local.snapshotRunId||d.meta.releaseId!==local.releaseId)throw Error('PUBLIC_SNAPSHOT_BINDING_FAILED');}
  else if(d.releaseId!==local.releaseId||(d.runId??d.snapshotRunId)!==local.snapshotRunId)throw Error('PUBLIC_DATA_BINDING_FAILED');
 }
+const attempt=JSON.parse(await readFile(resolve(root,'latest-attempt.json'),'utf8'));
+if(attempt.runId!==local.snapshotRunId||attempt.releaseId!==local.releaseId)throw Error('PUBLIC_ATTEMPT_BINDING_FAILED');
+await writeFile(resolve(root,'latest-attempt.json'),JSON.stringify({...attempt,stage:'READBACK_VERIFIED',publication:{status:'READBACK_VERIFIED',dataCommit:head.object.sha,verifiedAt:new Date().toISOString()}}));
 console.log(JSON.stringify({status:'READBACK_VERIFIED',runId:local.snapshotRunId,releaseId:local.releaseId}));

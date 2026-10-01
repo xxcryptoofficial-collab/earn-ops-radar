@@ -46,7 +46,7 @@ export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=D
     const [snapshot,status,references]=files;
     if(references && (references.schemaVersion!=="earn-public-reference/1.0" || references.releaseId!==m.releaseId || references.boundSnapshotRunId!==snapshot.meta.runId))throw new Error("reference release mismatch");
     if(snapshot.meta.releaseId!==m.releaseId||status.releaseId!==m.releaseId||snapshot.meta.runId!==m.snapshotRunId||status.snapshotRunId!==m.snapshotRunId)throw new Error('delivery version mismatch');
-    const result = {...snapshot,researchReferences:references??null,meta:{...snapshot.meta,latestAttempt:attempt,releaseStatus:status,deliveryMismatch:false,
+    const result = {...snapshot,researchReferences:references??null,meta:{...snapshot.meta,latestAttempt:attempt,releaseStatus:status,deliveryMismatch:false,deliveryCommit:options.deliveryCommit??null,
       expectedNextAt:m.expectedNextAt,graceSeconds:m.graceSeconds??3600,
       missedOrStale:missed(m.expectedNextAt,m.graceSeconds),displayedSnapshotRunId:m.snapshotRunId,latestAttemptRunId:attempt?.runId??null}};
     await saveCache(result);
@@ -77,8 +77,8 @@ export async function loadPublicBranch(owner,repo,branch,fetcher=fetch,previous=
   let head;
   try{head=await Promise.race([deadline,(async()=>{const response=await fetcher(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}?check=${now}`,{signal:controller.signal,cache:'no-store'});if(!response.ok)throw new Error('public head unavailable');return response.json();})()]);}finally{clearTimeout(timer);}
   if(head.ref!==`refs/heads/${branch}`||head.object?.type!=='commit'||!/^[0-9a-f]{40}$/.test(head.object?.sha??''))throw new Error('public head rejected');
-  const result=await loadBoundRelease(new URL(`https://raw.githubusercontent.com/${owner}/${repo}/${head.object.sha}/${prefix}`),fetcher,previous,now,{...options,cacheKey:stableKey});
-  return {...result,meta:{...result.meta,deliveryCommit:head.object.sha}};
+  const result=await loadBoundRelease(new URL(`https://raw.githubusercontent.com/${owner}/${repo}/${head.object.sha}/${prefix}`),fetcher,previous,now,{...options,cacheKey:stableKey,deliveryCommit:head.object.sha});
+  return {...result,meta:{...result.meta,attemptCommit:head.object.sha}};
  }catch{
   return loadBoundRelease(new URL(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${prefix}`),()=>Promise.reject(new Error('Public head lookup failed')),previous,now,{...options,cacheKey:stableKey});
  }

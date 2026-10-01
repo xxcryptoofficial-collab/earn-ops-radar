@@ -47,6 +47,22 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Earn public cloud data [skip ci]'
           git push origin HEAD:refs/heads/earn-public-data
+          if test "${{ steps.collect.outcome }}" = success; then
+            node ../runtime/scripts/write-publication-receipt.mjs . "$(git rev-parse HEAD)"
+            git add -- latest-attempt.json
+            node ../runtime/scripts/check-public-staging.mjs
+            git commit -m 'Earn public data persisted receipt [skip ci]'
+            git push origin HEAD:refs/heads/earn-public-data
+          fi
       - name: Verify published immutable raw data release
+        id: verify
         if: steps.collect.outcome == 'success'
         run: node runtime/scripts/verify-public-data.mjs public-data
+      - name: Persist verified publication receipt
+        if: steps.verify.outcome == 'success'
+        working-directory: public-data
+        run: |
+          git add -- latest-attempt.json
+          node ../runtime/scripts/check-public-staging.mjs
+          git commit -m 'Earn public data verified receipt [skip ci]'
+          git push origin HEAD:refs/heads/earn-public-data
