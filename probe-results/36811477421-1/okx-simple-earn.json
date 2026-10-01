@@ -1,0 +1,17 @@
+{
+  "sourceId": "okx-simple-earn",
+  "sourceUrl": "https://www.okx.com/earn/simple-earn",
+  "finalUrl": "https://www.okx.com/en-us/earn/simple-earn",
+  "acquisitionMethod": "anonymous-browser-rendered-dom",
+  "startedAt": "2026-10-01T03:40:06.410Z",
+  "observedAt": "2026-10-01T03:40:37.267Z",
+  "httpStatus": 404,
+  "bodySha256": "9f4648ca19b04011e6429914d56da01ed5a95306282afc6804bfaf6f7267e111",
+  "status": "no_catalog_verified",
+  "currentQuoteVerified": false,
+  "limitations": [
+    "Single anonymous probe; no stable daily operation claim",
+    "No click into Subscribe or account access",
+    "Displayed rate/tiers/eligibility/source update time require further review"
+  ]
+}

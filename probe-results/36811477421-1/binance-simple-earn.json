@@ -1,0 +1,17 @@
+{
+  "sourceId": "binance-simple-earn",
+  "sourceUrl": "https://www.binance.com/en/earn/simple-earn",
+  "finalUrl": "https://www.binance.com/en/earn/simple-earn",
+  "acquisitionMethod": "anonymous-browser-rendered-dom",
+  "startedAt": "2026-10-01T03:39:36.115Z",
+  "observedAt": "2026-10-01T03:40:06.363Z",
+  "httpStatus": 202,
+  "bodySha256": "07266cae9b1ab9202a0ff600603adbe8e2c79d53ec57c9929cebcd4a825104be",
+  "status": "partial_catalog_read",
+  "currentQuoteVerified": false,
+  "limitations": [
+    "Single anonymous probe; no stable daily operation claim",
+    "No click into Subscribe or account access",
+    "Displayed rate/tiers/eligibility/source update time require further review"
+  ]
+}
