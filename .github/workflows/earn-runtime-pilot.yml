@@ -1,0 +1,56 @@
+name: Earn real runtime isolated pilot
+on:
+  push:
+    branches: [earn-browser-probe]
+    paths:
+      - '.github/workflows/earn-runtime-pilot.yml'
+      - 'cloud-candidate/runtime/**'
+      - 'cloud-candidate/package*.json'
+permissions:
+  contents: write
+concurrency:
+  group: earn-public-isolated-pilot
+  cancel-in-progress: false
+jobs:
+  real-public-reads:
+    if: github.ref == 'refs/heads/earn-browser-probe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: earn-browser-probe
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix cloud-candidate --ignore-scripts --no-audit --no-fund
+      - run: cd cloud-candidate && npx playwright install --with-deps chromium
+      - name: Portable runtime regression
+        run: npm test --prefix cloud-candidate
+      - name: Fresh public API/SSR and Binance browser reads
+        run: npm run cloud:collect --prefix cloud-candidate
+      - name: Persist exact public pilot outputs
+        if: always()
+        run: |
+          test "$GITHUB_REF" = refs/heads/earn-browser-probe
+          destination="pilot-results/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$destination"
+          for name in earn-snapshot.json run-status.json research-references.json current.json latest-attempt.json; do
+            if test -f "cloud-candidate/$name"; then cp "cloud-candidate/$name" "$destination/$name"; fi
+          done
+          node --input-type=module - "$destination" <<'JS'
+          import {readFile,mkdir,copyFile} from 'node:fs/promises';
+          import {dirname} from 'node:path';
+          const destination=process.argv[2];
+          const m=JSON.parse(await readFile('cloud-candidate/current.json','utf8'));
+          for(const f of Object.values(m.files)){
+            if(!/^releases\/[a-zA-Z0-9_.-]+\/(earn-snapshot|run-status|research-references|research-index|evidence-index)\.json$/.test(f.path))throw Error('PUBLIC_PATH_REJECTED');
+            await mkdir(dirname(`${destination}/${f.path}`),{recursive:true});
+            await copyFile(`cloud-candidate/${f.path}`,`${destination}/${f.path}`);
+          }
+          JS
+          git add -- "$destination"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Earn real runtime public pilot results [skip ci]'
+          git push origin HEAD:refs/heads/earn-browser-probe
