@@ -504,3 +504,14 @@ select:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px
  .compact-dashboard .quote-filters label { flex:initial; }
  .compact-dashboard .quote-filters select, .compact-dashboard .quote-filters button, .exchange-grid .product-item summary, .compact-dashboard .rate-card summary { min-height:44px; }
 }
+
+
+.research-reference-section {max-width:1240px;margin:24px auto;padding:20px;background:#fff;border:1px solid #d7dfd8;border-radius:14px;box-sizing:border-box;}
+.research-reference-section h2 {margin:0 0 12px;font-size:20px;}
+.research-reference-section > p {color:#536259;line-height:1.6;overflow-wrap:anywhere;}
+.research-reference-section details {padding:12px 0;border-top:1px solid #e5eae6;}
+.research-reference-section summary {cursor:pointer;font-size:14px;line-height:1.6;}
+.research-reference-section details p {font-size:13px;line-height:1.6;color:#45584b;overflow-wrap:anywhere;}
+.research-reference-section a {font-size:13px;color:#286344;}
+@media(max-width:700px){.research-reference-section{margin:16px 12px;padding:16px;}}
+.cloud-delivery-notice{max-width:1240px;margin:12px auto;padding:12px 16px;border:1px solid #b5c5b8;border-radius:10px;background:#f1f5f1;color:#3d5745;font-size:13px;overflow-wrap:anywhere;}

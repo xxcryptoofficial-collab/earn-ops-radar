@@ -88,3 +88,4 @@ export function renderApp(root,raw) {
  const latest=s.meta.latestAttempt,status=latest?.status??s.meta.runStatus;
  root.innerHTML=`<div class="app-shell compact-dashboard"><main class="main-shell"><header class="masthead"><h1>Earn Radar</h1><div class="run-card"><span>最近采集</span><strong title="${esc(status)}">${status==='COMMITTED'?'已读取':status==='FAILED'?'本轮失败':'部分缺失'}</strong><strong class="date-value date-highlight">${formatTime(latest?.finishedAt??s.meta.generatedAt)}</strong></div></header><div class="content-shell"><div class="screen-stack">${actions(s)}${regionalResearch(s)}${alerts(s)}${yieldUniverse(s)}</div></div><footer>北京时间 UTC+8 · 过期内容不展示 · 来源与条件见各卡片</footer></main></div>`;
 }
+

@@ -168,3 +168,4 @@ export function buildPricingWarnings(snapshot, days = 5) {
 export function freshnessLabel(status) {
   return ({ live: "自动回读", fresh: "自动回读", manual: "人工种子", partial: "部分回读", stale: "可能过时", failed: "抓取失败" })[status] ?? status;
 }
+

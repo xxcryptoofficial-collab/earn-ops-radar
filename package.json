@@ -1,0 +1,1 @@
+{"name":"earn-public-cloud-runtime","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","cloud:collect":"node runtime/scripts/cloud-daily.mjs","cloud:verify":"node runtime/scripts/verify-pages.mjs"},"engines":{"node":">=22"},"dependencies":{"playwright":"1.51.1"}}

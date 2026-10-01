@@ -32,4 +32,3 @@ export function visibleSnapshot(s,now=Date.now()) {
     ledger:{...s.ledger,products:(s.ledger?.products??[]).filter(r=>isCurrent(r,now,['listingDataAsOf','listingFetchedAt'])&&ids.has(r.anchorId))},
     sourceRuns:(s.sourceRuns??[]).filter(r=>isCurrent({...r,status:'fresh'},now,['fetchedAt']))};
 }
-

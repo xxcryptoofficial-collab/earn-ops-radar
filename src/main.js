@@ -1,26 +1,15 @@
+import { loadPublicBranch } from "./domain/delivery.js";
+import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
   if (!response.ok) throw new Error(`${url} HTTP ${response.status}`);
   return response.json();
 }
 
 async function loadSnapshot() {
-  let snapshot;
-  const source = "static-public";
-  snapshot = await fetchJson(new URL("../earn-snapshot.json", import.meta.url));
-  let latestAttempt = null;
-  try {
-    latestAttempt = await fetchJson(new URL("../run-status.json", import.meta.url));
-  } catch {
-    // 初次部署或本地静态预览没有云端状态时，快照仍可独立展示。
-  }
-  return {
-    ...snapshot,
-    meta: { ...snapshot.meta, deliverySource: source, latestAttempt },
-    sourceRuns: latestAttempt?.sourceRuns?.length ? latestAttempt.sourceRuns : snapshot.sourceRuns,
-  };
+  return loadPublicBranch("xxcryptoofficial-collab", "earn-ops-radar", "earn-public-data", fetch, currentSnapshot);
 }
 
 const root = document.querySelector("#app");
@@ -30,6 +19,10 @@ function draw(snapshot) {
   const open = new Set([...root.querySelectorAll('details[data-product-key][open]')].map(el=>el.dataset.productKey));
   const focusFilter = document.activeElement?.dataset?.filter;
   renderApp(root, snapshot);
+  renderReferences(root, snapshot.researchReferences);
+  const notice=document.createElement('p');notice.className='cloud-delivery-notice';
+  notice.textContent=snapshot.meta.deliveryMode==='public-baseline-import'?'公开基线导入，来源时间未刷新；尚未作为新采集':snapshot.meta.deliveryMismatch?'本次读取失败，保留上一已核版本；来源时间未刷新':snapshot.meta.missedOrStale?'已超过下一轮更新时间，当前数据标为漏跑/过期':snapshot.meta.latestAttempt?.status==='FAILED'?'最近云采集失败，保留上一已核版本':`公开云数据版本 ${snapshot.meta.runId} · ${snapshot.meta.runStatus}；OKX托管来源仍受地区限制`;
+  root.prepend(notice);
   root.querySelectorAll('details[data-product-key]').forEach(el=>{el.open=open.has(el.dataset.productKey);});
   if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus();
 }
@@ -52,3 +45,4 @@ function start() {
 window.addEventListener("hashchange", () => { if (currentSnapshot) draw(currentSnapshot); });
 setInterval(() => { if (!document.hidden) start(); }, 15 * 60 * 1000);
 start();
+

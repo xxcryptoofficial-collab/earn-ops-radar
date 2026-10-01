@@ -18,3 +18,4 @@ export function filterProducts(rows, filters = {}) {
     && (!filters.coin || r.coin === filters.coin)
     && (!filters.term || (filters.term === '活期' ? r.term === '活期' : /^定期/.test(r.term ?? ''))));
 }
+
