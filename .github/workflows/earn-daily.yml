@@ -1,6 +1,8 @@
 name: Earn public cloud daily
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '10 1 * * *' # 09:10 Asia/Shanghai; scheduled jobs may delay.
 permissions:
   contents: write
 concurrency:
