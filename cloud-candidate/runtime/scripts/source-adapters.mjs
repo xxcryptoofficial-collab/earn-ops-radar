@@ -1,6 +1,14 @@
+import { createHash } from 'node:crypto';
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
+
+let evidenceRecorder = null;
+export function setSourceEvidenceRecorder(recorder) { evidenceRecorder = recorder; }
+function recordResponse(url, body, status, method = 'GET', contentType = null) {
+  if (!evidenceRecorder) return;
+  evidenceRecorder({ sourceUrl: url, acquisitionMethod: 'anonymous-http-response', observedAt: new Date().toISOString(), method, httpStatus: status, contentType, bodyBytes: Buffer.byteLength(body), bodySha256: createHash('sha256').update(body).digest('hex'), rawBodyStored: false, limitation: 'Hash binds bytes consumed by parser; full response body is not archived' });
+}
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 24 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
@@ -72,6 +80,7 @@ async function fetchWithCurl(url, options, timeoutMs) {
       maxBuffer: MAX_RESPONSE_BYTES,
       timeout: timeoutMs + 1_000,
     });
+    recordResponse(url, stdout, 200, options.method ?? "GET");
     return responseFromText(stdout);
   } catch (error) {
     const code = Number(error?.code);
@@ -97,6 +106,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
     } catch {
       return await fetchWithCurl(url, options, timeoutMs);
     }
+    if (evidenceRecorder) recordResponse(url, Buffer.from(await response.clone().arrayBuffer()), response.status, options.method ?? "GET", response.headers.get("content-type"));
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response;
   } finally {

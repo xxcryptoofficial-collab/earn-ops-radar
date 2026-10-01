@@ -2,6 +2,7 @@ import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {refreshSnapshot} from './refresh-snapshot.mjs';
+import {setSourceEvidenceRecorder} from './source-adapters.mjs';
 import {publicProjection} from './publish-pages.mjs';
 import {validateSnapshot} from '../src/domain/contract.js';
 import {validateRunStatus} from '../src/domain/run-status.js';
@@ -22,6 +23,7 @@ export async function runCloudDaily({outputRoot=root,fixtureText=null,fixtureObs
   baseline=await json(resolve(outputRoot,'earn-snapshot.json'));
   await atomic(resolve(state,'snapshot.json'),baseline);await atomic(resolve(state,'manual.json'),{entries:[]});
   await atomic(resolve(state,'PUBLIC.json'),{schemaVersion:'1.0',scope:'external-public-only',records:[]});
+  const apiResponses=[];setSourceEvidenceRecorder(response=>apiResponses.push(response));
   const refreshed=await refreshSnapshot({snapshotPath:resolve(state,'snapshot.json'),manualPath:resolve(state,'manual.json'),researchPath:resolve(state,'PUBLIC.json'),statusPath:resolve(state,'status.json'),archiveDir:resolve(state,'archive'),offline:fixtureText!==null, ...(adapters?{adapters}:{}),now:()=>fixtureText!==null?now:new Date()});
   let records=previous.records.filter(r=>!r.id.startsWith('reference-binance-catalog-'));let evidence=null;let browserStatus='failed';
   try{
@@ -39,17 +41,19 @@ export async function runCloudDaily({outputRoot=root,fixtureText=null,fixtureObs
   const errors=[...validateSnapshot(projected.snapshot),...validateRunStatus(projected.status)];if(errors.length)throw Error('PROJECTED_CONTRACT_REJECTED');
   const references={schemaVersion:'earn-public-reference/1.0',scope:'external-public-only',releaseId,runId,boundSnapshotRunId:runId,currentQuoteVerified:false,records,sources:[{id:'binance-catalog',status:browserStatus,lastObservedAt:evidence?.observedAt??previous.sources?.find(s=>s.id==='binance-catalog')?.lastObservedAt??null,currentQuoteVerified:false},{id:'okx-catalog-hosted',status:'restricted_no_retry',sourceUrl:'https://www.okx.com/earn/simple-earn',lastAccessAttemptAt:'2026-10-01T03:40:37.267Z',restriction:'Official page states unavailable in runner country/region due to local laws and regulations; no locale/proxy/account bypass',currentQuoteVerified:false}]};
   const index={schemaVersion:'earn-public-research-index/1.0',scope:'external-public-only',releaseId,runId,records:records.map(r=>({...r,knowledgeClass:'source-reference-with-stated-limitations',analysisInference:null})),sources:references.sources};
-  const evidenceIndex={schemaVersion:'earn-public-evidence-index/1.0',scope:'external-public-only',releaseId,runId,apiAttempts,evidence:evidence?[evidence]:[]};
+  const evidenceIndex={schemaVersion:'earn-public-evidence-index/1.0',scope:'external-public-only',releaseId,runId,apiAttempts,apiResponses,evidence:evidence?[evidence]:[]};
   const dir=resolve(outputRoot,'releases',releaseId);await mkdir(dir,{recursive:true});
   const payloads={snapshot:['earn-snapshot.json',projected.snapshot],status:['run-status.json',projected.status],references:['research-references.json',references],index:['research-index.json',index],evidence:['evidence-index.json',evidenceIndex]};const files={};
   for(const [key,[name,value]]of Object.entries(payloads)){const data=bytes(value);await writeFile(resolve(dir,name),data,{flag:'wx'});files[key]={path:`releases/${releaseId}/${name}`,sha256:hash(data)};}
   const manifest={schemaVersion:'earn-public-release/1.0',scope:'external-public-only',releaseId,snapshotRunId:runId,expectedNextAt:expectedNextAt(finishedAt),graceSeconds:3600,files};
   await atomic(resolve(outputRoot,'earn-snapshot.json'),projected.snapshot);await atomic(resolve(outputRoot,'run-status.json'),projected.status);await atomic(resolve(outputRoot,'research-references.json'),references);
   await atomic(resolve(outputRoot,'current.json'),manifest);await atomic(resolve(outputRoot,'latest-attempt.json'),{...projected.status,stage:'COLLECTED_PENDING_PUBLICATION',acquisitionMode:fixtureText===null?'live':'fixture_replay'});
+  setSourceEvidenceRecorder(null);
   return{runId,releaseId,status:'PARTIAL',browserStatus,referenceRecords:records.length};
  }catch{
+  setSourceEvidenceRecorder(null);
   await atomic(resolve(outputRoot,'latest-attempt.json'),{schemaVersion:'1.0',runId,status:'FAILED',startedAt,finishedAt:new Date().toISOString(),snapshotRunId:baseline?.meta?.runId??null,message:'Cloud collection failed; previous verified release retained'});
   throw Error('CLOUD_COLLECTION_FAILED');
  }
 }
-if(process.argv[1]===import.meta.filename){runCloudDaily().then(r=>console.log(JSON.stringify(r))).catch(e=>{console.error(e.message);process.exitCode=1;});}
+if(process.argv[1]===import.meta.filename){runCloudDaily({outputRoot:process.argv.includes('--output-root')?resolve(process.argv[process.argv.indexOf('--output-root')+1]):root}).then(r=>console.log(JSON.stringify(r))).catch(e=>{console.error(e.message);process.exitCode=1;});}

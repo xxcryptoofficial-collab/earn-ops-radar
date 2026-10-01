@@ -27,6 +27,8 @@ jobs:
       - run: cd cloud-candidate && npx playwright install --with-deps chromium
       - name: Portable runtime regression
         run: npm test --prefix cloud-candidate
+      - name: Restore preceding immutable public releases
+        run: node cloud-candidate/runtime/scripts/recover-pilot-head.mjs pilot-results cloud-candidate
       - name: Fresh public API/SSR and Binance browser reads
         run: npm run cloud:collect --prefix cloud-candidate
       - name: Persist exact public pilot outputs
