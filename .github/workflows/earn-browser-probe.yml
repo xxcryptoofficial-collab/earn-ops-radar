@@ -1,0 +1,55 @@
+# REVIEW ONLY. No remote branch or workflow has been created.
+name: Earn anonymous browser probe
+on:
+  push:
+    branches: [earn-browser-probe]
+    paths:
+      - '.github/workflows/earn-browser-probe.yml'
+      - 'probe/probe-earn-browser.mjs'
+permissions:
+  contents: write
+concurrency:
+  group: earn-anonymous-probe
+  cancel-in-progress: false
+jobs:
+  anonymous-read:
+    if: github.ref == 'refs/heads/earn-browser-probe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: earn-browser-probe
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: One anonymous read per official source
+        run: |
+          mkdir -p /tmp/earn-anonymous-probe
+          cd /tmp/earn-anonymous-probe
+          npm init -y
+          npm install --ignore-scripts --no-audit --no-fund playwright@1.51.1
+          npx playwright install --with-deps chromium
+          cp "$GITHUB_WORKSPACE/probe/probe-earn-browser.mjs" ./probe.mjs
+          node probe.mjs
+      - name: Persist exact public receipt whitelist to temporary branch
+        if: always()
+        run: |
+          test "$GITHUB_REF" = refs/heads/earn-browser-probe
+          destination="probe-results/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$destination"
+          for name in binance-simple-earn.json binance-simple-earn.txt okx-simple-earn.json okx-simple-earn.txt; do
+            if test -f "/tmp/earn-anonymous-probe/probe-output/$name"; then
+              cp "/tmp/earn-anonymous-probe/probe-output/$name" "$destination/$name"
+              git add -- "$destination/$name"
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo 'No source receipt produced; no writeback.'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Earn anonymous probe receipt [skip ci]'
+          git push origin HEAD:refs/heads/earn-browser-probe
