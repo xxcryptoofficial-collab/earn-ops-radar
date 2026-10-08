@@ -1,9 +1,7 @@
 import { loadPublicBranch } from "./domain/delivery.js";
 import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
-import { renderGeneralResearch, renderRuleComparison, renderEvidenceScope } from './ui/general-research.js';
 
-renderGeneralResearch(document.querySelector('#research-general'));
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -17,15 +15,13 @@ async function loadSnapshot() {
 
 const root = document.querySelector("#app");
 let currentSnapshot;
+renderApp(root,null);
 function draw(snapshot) {
   currentSnapshot = snapshot;
   const open = new Set([...root.querySelectorAll('details[data-product-key][open]')].map(el=>el.dataset.productKey));
   const focusFilter = document.activeElement?.dataset?.filter;
   renderApp(root, snapshot);
-  renderGeneralResearch(document.querySelector('#research-general'), snapshot);
-  renderRuleComparison(root.querySelector('[data-rule-comparison]'));
-  renderReferences(root, snapshot.researchReferences);
-  renderEvidenceScope(root.querySelector("[data-evidence-scope]"), snapshot);
+  renderReferences(root.querySelector('[data-directory-host]'), snapshot.researchReferences);
   root.querySelectorAll('details[data-product-key]').forEach(el=>{el.open=open.has(el.dataset.productKey);});
   if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus();
 }
