@@ -21,6 +21,27 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: var(--canvas); }
+#research-private { scroll-margin-top: 12px; padding: 16px 24px 0; }
+.private-research-panel { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); }
+.private-research-panel > summary { cursor: pointer; padding: 15px 20px; font-weight: 700; }
+.private-research-content { padding: 0 20px 20px; }
+.private-research-notice, .private-research-message { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.private-research-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+.private-research-load, .private-research-toolbar button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--dark); color: white; cursor: pointer; font-size: 13px; }
+.private-research-toolbar input { max-width: 100%; font-size: 12px; }
+.private-research-toolbar button { background: transparent; color: var(--ink); }
+.private-research-toolbar button:disabled { opacity: .4; cursor: default; }
+.private-research-cards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.private-research-card { padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: white; overflow-wrap: anywhere; }
+.private-research-card h3 { font-size: 19px; line-height: 1.5; margin: 12px 0 20px; }
+.private-research-field { margin: 15px 0; }
+.private-research-field h4 { margin: 0 0 5px; font-size: 12px; color: var(--muted); }
+.private-research-field p { margin: 0; font-size: 14px; line-height: 1.75; }
+.private-research-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); }
+.private-research-state { padding: 9px 12px; background: #edf3e6; border-radius: 6px; font-size: 12px; }
+.private-research-expired { color: var(--amber); font-weight: 600; }
+.private-research-card a { display: inline-block; margin-top: 14px; font-size: 13px; }
+@media (max-width: 760px) { #research-private { padding: 10px 10px 0; } .private-research-cards { grid-template-columns: 1fr; } .private-research-content { padding: 0 12px 12px; } .private-research-card { padding: 16px; } }
 a { color: inherit; }
 button, input, select, textarea { font: inherit; }
 .skip-link { position: fixed; left: 16px; top: -100px; z-index: 100; padding: 10px 14px; background: #fff; }

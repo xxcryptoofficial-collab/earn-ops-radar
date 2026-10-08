@@ -1,6 +1,9 @@
 import { loadPublicBranch } from "./domain/delivery.js";
 import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
+import { mountPrivateResearch } from './ui/private-research.js';
+
+mountPrivateResearch(document.querySelector('#research-private'));
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
