@@ -536,3 +536,5 @@ select:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px
 .research-reference-section a {font-size:13px;color:#286344;}
 @media(max-width:700px){.research-reference-section{margin:16px 12px;padding:16px;}}
 .cloud-delivery-notice{max-width:1240px;margin:12px auto;padding:12px 16px;border:1px solid #b5c5b8;border-radius:10px;background:#f1f5f1;color:#3d5745;font-size:13px;overflow-wrap:anywhere;}
+
+.general-research-card{padding:14px 0;border-top:1px solid #d7dfd8}.general-research-card p{line-height:1.65;overflow-wrap:anywhere}.general-research-card h3{font-size:17px}

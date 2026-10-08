@@ -1,9 +1,9 @@
 import { loadPublicBranch } from "./domain/delivery.js";
 import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
-import { mountPrivateResearch } from './ui/private-research.js';
+import { renderGeneralResearch } from './ui/general-research.js';
 
-mountPrivateResearch(document.querySelector('#research-private'));
+renderGeneralResearch(document.querySelector('#research-general'));
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -19,6 +19,7 @@ const root = document.querySelector("#app");
 let currentSnapshot;
 function draw(snapshot) {
   currentSnapshot = snapshot;
+  renderGeneralResearch(document.querySelector('#research-general'), snapshot);
   const open = new Set([...root.querySelectorAll('details[data-product-key][open]')].map(el=>el.dataset.productKey));
   const focusFilter = document.activeElement?.dataset?.filter;
   renderApp(root, snapshot);
