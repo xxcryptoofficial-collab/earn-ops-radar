@@ -25,7 +25,7 @@ function draw(snapshot) {
   renderApp(root, snapshot);
   renderReferences(root, snapshot.researchReferences);
   const notice=document.createElement('p');notice.className='cloud-delivery-notice';
-  notice.textContent=snapshot.meta.deliveryMode==='public-baseline-import'?'公开基线导入，来源时间未刷新；尚未作为新采集':snapshot.meta.deliveryMismatch?'本次读取失败，保留上一已核版本；来源时间未刷新':snapshot.meta.missedOrStale?'已超过下一轮更新时间，当前数据标为漏跑/过期':snapshot.meta.latestAttempt?.status==='FAILED'?'最近云采集失败，保留上一已核版本':`公开云数据版本 ${snapshot.meta.runId} · ${snapshot.meta.runStatus}；OKX托管来源仍受地区限制`;
+  notice.textContent=snapshot.meta.deliveryMode==='public-baseline-import'?'公开基线导入，来源时间未刷新；尚未作为新采集':snapshot.meta.deliveryMismatch?'本次读取失败，保留上一已核版本；来源时间未刷新':snapshot.meta.missedOrStale?'已超过下一轮更新时间，当前数据标为漏跑/过期':snapshot.meta.latestAttempt?.status==='FAILED'?'最近云采集失败，保留上一已核版本':`公开数据已读取；平台覆盖与观察日期见下方`;
   root.prepend(notice);
   root.querySelectorAll('details[data-product-key]').forEach(el=>{el.open=open.has(el.dataset.productKey);});
   if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus();
@@ -42,7 +42,7 @@ function start() {
   loadSnapshot()
     .then(draw)
     .catch((error) => {
-      root.innerHTML = `<main class="fatal-state"><strong>当前无法打开理财雷达</strong><p>${String(error.message).replace(/[<>&]/g, "")}</p><p>没有使用旧值冒充新数据，请检查本地快照。</p></main>`;
+      root.innerHTML = `<main class="fatal-state"><strong>当前无法打开理财雷达</strong><p>公开数据暂时无法读取</p><p>请稍后重试；当前没有可确认的数据。</p></main>`;
     });
 }
 

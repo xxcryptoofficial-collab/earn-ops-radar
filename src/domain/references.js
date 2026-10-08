@@ -1,27 +1,12 @@
+import {escapeHtml as esc,dateLabel,safeSource,termLabel,familyLabel,unknownLabels,observationStatus,referenceDisplay} from './business-labels.js';
 export function verifyReferences(data,snapshotRunId){
  if(data?.schemaVersion!=='earn-public-reference/1.0'||data.scope!=='external-public-only'||data.boundSnapshotRunId!==snapshotRunId||!Array.isArray(data.records)||data.currentQuoteVerified!==false)throw Error('REFERENCE_VERSION_MISMATCH');
- if(data.records.some(r=>r.classification!=='research-reference-only'||r.currentQuoteVerified!==false||!Array.isArray(r.acquisition)))throw Error('REFERENCE_CLASSIFICATION_INVALID');
- return data;
+ if(data.records.some(r=>r.classification!=='research-reference-only'||r.currentQuoteVerified!==false||!Array.isArray(r.acquisition)))throw Error('REFERENCE_CLASSIFICATION_INVALID');return data;
 }
-export function referenceState(record,now=Date.now()){
- if(record.validUntil&&Date.parse(record.validUntil)<=now)return '已过期历史资料';
- if(!record.observedAt||!record.verifiedAt)return '原网页时效未知，仅供研究';
- if(now-Date.parse(record.verifiedAt)>8*86400000)return '超过八日未复核，仅供历史研究';
- return '公开页面观察，仅供研究';
-}
+export const referenceState=observationStatus;
 export function renderReferences(root,data){
- root.querySelector('[data-research-references]')?.remove();
- const section=document.createElement('section');section.dataset.researchReferences='';section.className='research-reference-section';
- const title=document.createElement('h2');title.textContent='竞品公开研究参考';section.append(title);
- const notice=document.createElement('p');notice.textContent='目录与活动条款中的百分比仅为来源引用，未验证为实时挂牌。资格、额度、归属时间未知处保留未知。';section.append(notice);
- if(!data){const p=document.createElement('p');p.textContent='参考资料未加载或版本核验未通过。';section.append(p);root.append(section);return;}
- for(const status of data.sources??[]){const note=document.createElement('p');note.textContent=`${status.id}：${status.status}；最后来源观察 ${status.lastObservedAt??status.lastAccessAttemptAt??'未知'}`;section.append(note);}
- const version=document.createElement('p');version.textContent=`研究版本 ${data.releaseId} · ${data.runId}`;section.append(version);
- for(const r of data.records){
-  const card=document.createElement('details');const summary=document.createElement('summary');summary.textContent=`${r.platform} · ${r.title} · ${referenceState(r)}`;card.append(summary);
-  for(const text of [r.fact,r.conditions,`观察时间：${r.observedAt??'未知'}；工具取回：${r.retrievedAt??r.fetchedAt??'未知'}；利率归属：${r.rateAsOf??'未知'}`,`未知字段：${(r.fieldsUnknown??[]).join('、')||'参见条件'}`]){const p=document.createElement('p');p.textContent=text;card.append(p);}
-  const source=document.createElement('a');source.textContent='官方来源';source.href=r.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';card.append(source);
-  section.append(card);
- }
- root.append(section);
+ root.querySelector('[data-research-references]')?.remove();const section=document.createElement('section');section.dataset.researchReferences='';section.className='business-panel reference-dashboard';
+ if(!data){section.innerHTML='<h2>竞品目录观察</h2><p>资料暂未读取；当前产品与利率未知。</p>';root.append(section);return;}
+ const sources=(data.sources??[]).map(s=>{const restricted=s.status==='restricted_no_retry';const failed=s.status==='failed';const name=s.id?.startsWith('binance')?'Binance':s.id?.startsWith('okx')?'OKX':'其他来源';return `<article class="coverage-tile"><strong>${name}</strong><span class="status-pill ${restricted?'warn':''}">${restricted?'地区限制 · 未取得目录':failed?'目录更新失败 · 保留历史':'部分目录已观察'}</span><p>${restricted?'当前采集地区无法访问，产品及收益未知。':failed?'本轮未取得新目录，保留之前观察日期。':'仅覆盖公开目录，具体资格和实时报价未确认。'}</p><small>${restricted?'尝试访问':'最近观察'} ${esc(dateLabel(s.lastObservedAt??s.lastAccessAttemptAt))}</small></article>`;}).join('');
+ const groups=[...new Set(data.records.map(r=>r.platform??'未确认平台'))];section.innerHTML=`<h2>竞品目录观察</h2><p class="business-note">这是官方页面当时展示的数值，保留真实观察日期；不作为当前挂牌或收益推荐。不同产品、币种和期限不直接比较。</p><div class="coverage-grid">${sources}</div>${groups.map(platform=>`<h3>${esc(platform)} · ${data.records.filter(r=>r.platform===platform).length} 条目录记录</h3><div class="business-grid">${data.records.filter(r=>r.platform===platform).map(r=>{const display=referenceDisplay(r);const unknown=unknownLabels(r.fieldsUnknown);return `<article class="business-card reference-card"><div class="card-heading"><h4>${esc(r.coin??'币种未披露')}</h4><span class="status-pill warn">${esc(observationStatus(r))}</span></div><p class="product-family">${esc(display.family)}</p><div class="business-value">${esc(display.value)}<small>${esc(display.kind)}</small></div><dl><dt>期限标签</dt><dd>${esc(termLabel(r.term))}</dd><dt>实际观察</dt><dd>${esc(dateLabel(r.observedAt))}</dd>${r.validUntil?`<dt>公告截止</dt><dd>${esc(dateLabel(r.validUntil))}</dd>`:''}<dt>资料取得</dt><dd>${esc(dateLabel(r.retrievedAt??r.fetchedAt))}</dd><dt>待确认</dt><dd>${esc(unknown.join('、')||'具体产品与参与条件')}</dd></dl>${display.condition?`<p class="business-note">${esc(display.condition)}</p>`:''}${/Max/.test(r.rawDisplay??'')?'<p class="business-note">页面上限，不代表全额余额收益。</p>':''}${/rwa/i.test(r.title??'')?'<p class="business-note">RWA仅为原目录标签，资产构成与产品身份未确认。</p>':''}${r.coin==='BABY'&&/Locked/.test(r.term??'')?'<p class="business-note">锁定分类来自父级目录推断，具体期限待核。</p>':''}${safeSource(r.sourceUrl,'原始目录')}</article>`;}).join('')}</div>`).join('')}`;root.append(section);
 }
