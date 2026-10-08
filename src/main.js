@@ -1,7 +1,7 @@
 import { loadPublicBranch } from "./domain/delivery.js";
 import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
-import { renderGeneralResearch, renderRuleComparison } from './ui/general-research.js';
+import { renderGeneralResearch, renderRuleComparison, renderEvidenceScope } from './ui/general-research.js';
 
 renderGeneralResearch(document.querySelector('#research-general'));
 
@@ -25,6 +25,7 @@ function draw(snapshot) {
   renderGeneralResearch(document.querySelector('#research-general'), snapshot);
   renderRuleComparison(root.querySelector('[data-rule-comparison]'));
   renderReferences(root, snapshot.researchReferences);
+  renderEvidenceScope(root.querySelector("[data-evidence-scope]"), snapshot);
   root.querySelectorAll('details[data-product-key]').forEach(el=>{el.open=open.has(el.dataset.productKey);});
   if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus();
 }
