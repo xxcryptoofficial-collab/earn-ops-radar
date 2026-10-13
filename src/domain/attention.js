@@ -1,0 +1,4 @@
+// Source ordering and priority define emphasis; metrics never manufacture a rank.
+export function attentionGroups(data){const items=data?.attention??[],byId=new Map(items.map(item=>[item.id,item])),ordered=[],seen=new Set();for(const id of data?.overview?.attentionIds??[]){if(byId.has(id)&&!seen.has(id)){ordered.push(byId.get(id));seen.add(id);}}for(const item of items)if(!seen.has(item.id)){ordered.push(item);seen.add(item.id);}return{focus:ordered.filter(item=>item.priority==='high'),background:ordered.filter(item=>item.priority!=='high')};}
+export function objectTone(key){const palette=['#365b7b','#7c5b38','#446c60','#665778'];let h=0;for(const c of String(key??''))h=(h*31+c.charCodeAt(0))>>>0;return palette[h%palette.length];}
+export function attentionIdentity(item){return item.questionIds?.[0]??item.id;}

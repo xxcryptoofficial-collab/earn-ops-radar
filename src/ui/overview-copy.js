@@ -1,0 +1,56 @@
+/* Gemini principal-authored overview and generic host labels, no private values. */
+export default {
+  "title": "Earn公开竞品与机制观察工作台",
+  "design": {
+    "hierarchy": "概览优先架构：首屏展示公开观察范围、动态信号与重点关注项；长篇机制解说与证据下沉至二级详情，保持主视图高信息密度与快速扫读能力。",
+    "desktop": "桌面端支持侧边滑出抽屉或中心原生对话框展开详情，保持主视图上下文与筛选可见。",
+    "mobile": "移动端采用全屏可关闭视图展示机制与证据，顶部提供明确关闭动作，返回时严格保留原有浏览与筛选状态。",
+    "detailReturn": "支持从平台卡片或研究问题直达对应证据段落；关闭详情后严格保留已有筛选条件、分页与页面滚动位置。"
+  },
+  "overview": {
+    "title": "全景概览",
+    "collectionTime": "报价采集",
+    "researchTime": "规则核验",
+    "scopeTitle": "公开观察范围",
+    "signalsTitle": "核心规则动态",
+    "noVerifiedChanges": "暂无可确认的新规则上线记录",
+    "noVerifiedChangesNote": "采集刷新不等研究更新，无可比前后证据不能确认新增或市场无变化；旧归档非本轮复核。",
+    "attentionTitle": "重点关注与核查",
+    "priceScope": "当前报价样本有限，可研究金额与期限定价，不能判断跨平台竞争力。",
+    "binanceExpired": "公告窗口已结束（续期状态未核）",
+    "binanceNote": "前1,000 USDT额外奖励APR 4%（年化）已过公告截止期；基础浮动APR为原公告参考非当前挂牌，到期后按公告仅实时浮动收益。",
+    "bybitStale": "规则待复核（超过核验有效窗口）",
+    "bybitNote": "持有USD1每日24次小时快照取最低合资格余额奖励WLFI，次日主资金账户；排除Savings；奖励币≠本金币。",
+    "comparisonUnknown": "各平台计息阶梯与币种机制存在异质性，公开报价样本不全，禁止直接跨平台收益排行。",
+    "marketLink": "来源缺口与市场参考",
+    "mechanismsTitle": "核心机制摘要",
+    "mechanismsNote": "点击展开完整机制拆解，查看规则拓扑、推演假设与证据边界。",
+    "binanceSummary": "额度加息：前1,000 USDT分层限时加息，底层基础浮动APR跨段覆盖，窗口已过续期未核。",
+    "bybitSummary": "持仓奖励：持有USD1按每日24次小时快照最低合资格余额计算奖励WLFI，排除Savings资产，状态待复核。",
+    "openEvidence": "查看已核证据",
+    "openMechanism": "展开机制拆解",
+    "close": "关闭",
+    "returnToOverview": "返回概览",
+    "showQuotes": "查看产品报价货架",
+    "showDirectory": "查看产品目录",
+    "unknownPlatform": "报价未取得",
+    "emptyFiltered": "当前筛选条件无匹配结果",
+    "noHistorical": "该筛选产品无已归档历史报价",
+    "noCurrent": "该平台暂无近期有效报价",
+    "loadingFailed": "公开数据暂不可读取，未接受未经核验的新版本",
+    "lastGood": "最近有效同步",
+    "loading": "公开数据加载中...",
+    "researchArchiveTitle": "公开机制研究归档",
+    "researchArchiveNote": "收录既往已核机制模型，独立于实时报价流，仅供产品逻辑分析。",
+    "researchExpired": "公告窗口已结束（历史规则仅供参考）",
+    "researchStale": "规则待复核",
+    "scopeHint": "观察范围覆盖规则、历史与近期报价，报价未取得不等于没有产品。",
+    "publicScopeNote": "当前为公共观察版，仅依据公开公告与有限抓取源，不代表全市场全貌，亦不代表私有经营全局。"
+  },
+  "navigation": {
+    "overview": "全景概览",
+    "quotes": "产品报价",
+    "references": "全局参考"
+  },
+  "footerNote": "基于公开公告与抓取样本，遵循“规则已核/界面未核/效果未测”。不构成投资建议，报价未知不等于没有产品。"
+};

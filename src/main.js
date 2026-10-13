@@ -1,13 +1,9 @@
-import { loadPublicBranch } from "./domain/delivery.js";
+import overviewCopy from './ui/overview-copy.js';
+import {createDetailController} from './ui/detail-controller.js';
+import { loadPublicBranch, loadBoundRelease } from "./domain/delivery.js";
 import { verifyReferences, renderReferences } from './domain/references.js';
 import { renderApp, viewFilters } from "./ui/render.js";
 
-
-async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
-  if (!response.ok) throw new Error(`${url} HTTP ${response.status}`);
-  return response.json();
-}
 
 async function loadSnapshot() {
   return loadPublicBranch("xxcryptoofficial-collab", "earn-ops-radar", "earn-public-data", fetch, currentSnapshot);
@@ -15,15 +11,23 @@ async function loadSnapshot() {
 
 const root = document.querySelector("#app");
 let currentSnapshot;
+let publicError=false;
+const details=createDetailController(root,()=>currentSnapshot);
 renderApp(root,null);
 function draw(snapshot) {
   currentSnapshot = snapshot;
+  document.title=overviewCopy.title;
   const open = new Set([...root.querySelectorAll('details[data-product-key][open]')].map(el=>el.dataset.productKey));
   const focusFilter = document.activeElement?.dataset?.filter;
-  renderApp(root, snapshot);
-  renderReferences(root.querySelector('[data-directory-host]'), snapshot.researchReferences);
+  const directoryFocus = document.activeElement?.dataset?.directoryFilter;
+  renderApp(root, snapshot,Date.now(),publicError);
+  if(snapshot?.researchReferences)verifyReferences(snapshot.researchReferences,snapshot.meta.runId);
+  if(snapshot)renderReferences(root.querySelector('[data-directory-host]'), snapshot.researchReferences);
+  if(publicError&&snapshot){const p=document.createElement('p');p.className='public-load-error';p.setAttribute('role','status');p.textContent=overviewCopy.overview.loadingFailed;root.querySelector('.earn-workbench')?.append(p);}
   root.querySelectorAll('details[data-product-key]').forEach(el=>{el.open=open.has(el.dataset.productKey);});
-  if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus();
+  if(details.isOpen())details.refresh();
+  if(focusFilter)root.querySelector(`[data-filter="${focusFilter}"]`)?.focus({preventScroll:true});
+  if(directoryFocus)root.querySelector(`[data-directory-filter="${directoryFocus}"]`)?.focus({preventScroll:true});
 }
 root.addEventListener('change', event=>{
   const key=event.target.dataset.filter;
@@ -35,13 +39,18 @@ root.addEventListener('click', event=>{
 
 function start() {
   loadSnapshot()
-    .then(draw)
-    .catch((error) => {
-      root.innerHTML = `<main class="fatal-state"><strong>当前无法打开理财雷达</strong><p>公开数据暂时无法读取</p><p>请稍后重试；当前没有可确认的数据。</p></main>`;
+    .then(snapshot=>{publicError=false;draw(snapshot);})
+    .catch(() => { publicError=true; draw(currentSnapshot??null);
     });
 }
 
-window.addEventListener("hashchange", () => { if (currentSnapshot) draw(currentSnapshot); });
-setInterval(() => { if (!document.hidden) start(); }, 15 * 60 * 1000);
-start();
 
+setInterval(() => { if (!document.hidden) start(); }, 15 * 60 * 1000);
+async function boot() {
+  try {
+    const bundled = await loadBoundRelease(new URL('../assets/public-baseline/',import.meta.url),fetch,null,Date.now(),{cacheKey:'earn-public-bundled-last-good',diagnostics:false});
+    draw(bundled);
+  } catch { publicError=true; draw(null); }
+  start();
+}
+boot();

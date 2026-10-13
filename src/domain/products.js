@@ -19,3 +19,5 @@ export function filterProducts(rows, filters = {}) {
     && (!filters.term || (filters.term === '活期' ? r.term === '活期' : /^定期/.test(r.term ?? ''))));
 }
 
+
+export function normalizeFilters(rows,filters){if(filters.term&&!['活期','定期'].includes(filters.term))filters.term='';if(filters.platform&&!rows.some(r=>r.platform===filters.platform))filters.platform='';const platformRows=rows.filter(r=>!filters.platform||r.platform===filters.platform);if(filters.coin&&!platformRows.some(r=>r.coin===filters.coin))filters.coin='';const coinRows=platformRows.filter(r=>!filters.coin||r.coin===filters.coin);if(filters.term&&!filterProducts(coinRows,{term:filters.term}).length)filters.term='';return filters;}

@@ -1,3 +1,4 @@
+import {validatePublicManifest,validatePublicSnapshot,validatePublicReferences,publicAttempt} from './public-validation.js';
 // New candidate loader. Pin a manifest once, then verify immutable bytes and IDs.
 // Diagnostics must never delay authoritative data. Bound fetch AND body reads.
 export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=Date.now(), options={}) {
@@ -26,15 +27,15 @@ export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=D
   const cacheKey=options.cacheKey??`earn-public-last-good:${base.href}`;
   const cache=options.cache??globalThis.localStorage;
   const digest=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
-  const saveCache=async snapshot=>{try{if(!cache)return;const body=JSON.stringify(snapshot);cache.setItem(cacheKey,JSON.stringify({schemaVersion:'earn-public-cache/1.0',body,sha256:await digest(body)}));}catch{}};
-  const cachedPrevious=async()=>{try{if(!cache)return null;const c=JSON.parse(cache.getItem(cacheKey));if(c.schemaVersion!=='earn-public-cache/1.0'||await digest(c.body)!==c.sha256)return null;const s=JSON.parse(c.body);if(s.meta?.scope!=='external-public-only'||!s.meta.releaseId||!s.meta.runId)return null;if(s.researchReferences&&(s.researchReferences.releaseId!==s.meta.releaseId||s.researchReferences.boundSnapshotRunId!==s.meta.runId))return null;return s;}catch{return null;}};
+  const saveCache=async snapshot=>{try{snapshot=validatePublicSnapshot(snapshot);if(!cache)return;const body=JSON.stringify(snapshot);cache.setItem(cacheKey,JSON.stringify({schemaVersion:'earn-public-cache/1.0',body,sha256:await digest(body)}));}catch{}};
+  const cachedPrevious=async()=>{try{if(!cache)return null;const c=JSON.parse(cache.getItem(cacheKey));if(c.schemaVersion!=='earn-public-cache/1.0'||await digest(c.body)!==c.sha256)return null;const s=JSON.parse(c.body);if(s.meta?.scope!=='external-public-only'||!s.meta.releaseId||!s.meta.runId)return null;if(s.researchReferences&&(s.researchReferences.releaseId!==s.meta.releaseId||s.researchReferences.boundSnapshotRunId!==s.meta.runId))return null;return validatePublicSnapshot(s);}catch{return null;}};
   let attempt=null;
   const diagnosticController=new AbortController();
   // Start separately; a pending/failed optional diagnostic never gates render.
-  const diagnostic=json(new URL('latest-attempt.json',base),options.diagnosticsTimeoutMs??2000,diagnosticController)
-    .then(value=>{attempt=value;}).catch(()=>{});
+  const diagnostic=options.diagnostics===false?Promise.resolve():json(new URL('latest-attempt.json',base),options.diagnosticsTimeoutMs??2000,diagnosticController)
+    .then(value=>{attempt=publicAttempt(value);}).catch(()=>{});
   try {
-    const m=await json(new URL('current.json',base));
+    const m=validatePublicManifest(await json(new URL('current.json',base)));
     const files=await Promise.all(['snapshot','status',...(m.files.references?['references']:[])].map(async key=>{
       const ref=m.files[key];
       if(!/^releases\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+\.json$/.test(ref.path))throw new Error('unsafe release path');
@@ -43,7 +44,10 @@ export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=D
       if(actual!==ref.sha256)throw new Error('delivery hash mismatch');
       return JSON.parse(new TextDecoder().decode(bytes));
     }));
-    const [snapshot,status,references]=files;
+    const [rawSnapshot,status,references]=files;
+    const snapshot=validatePublicSnapshot(rawSnapshot);
+    if(references)validatePublicReferences(references,snapshot.meta.runId,m.releaseId);
+    publicAttempt(status);
     if(references && (references.schemaVersion!=="earn-public-reference/1.0" || references.releaseId!==m.releaseId || references.boundSnapshotRunId!==snapshot.meta.runId))throw new Error("reference release mismatch");
     if(snapshot.meta.releaseId!==m.releaseId||status.releaseId!==m.releaseId||snapshot.meta.runId!==m.snapshotRunId||status.snapshotRunId!==m.snapshotRunId)throw new Error('delivery version mismatch');
     const result = {...snapshot,researchReferences:references??null,meta:{...snapshot.meta,latestAttempt:attempt,releaseStatus:status,deliveryMismatch:false,deliveryCommit:options.deliveryCommit??null,
@@ -54,6 +58,7 @@ export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=D
   } catch(error) {
     previous=previous??await cachedPrevious();
     if(!previous)throw error;
+    previous=validatePublicSnapshot(previous);
     return {...previous,meta:{...previous.meta,latestAttempt:attempt,latestAttemptRunId:attempt?.runId??null,
       missedOrStale:missed(previous.meta.expectedNextAt,previous.meta.graceSeconds),
       deliveryMismatch:true,cachedFallback:true,deliveryError:String(error.message)}};

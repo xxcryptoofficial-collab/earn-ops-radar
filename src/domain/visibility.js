@@ -21,15 +21,12 @@ export function isResearchCurrent(r, now=Date.now()) {
 }
 export function visibleSnapshot(s,now=Date.now()) {
   const upstream=(s.upstream??[]).filter(r=>isCurrent(r,now)).map(r=>({...r,history:(r.history??[]).filter(p=>p.kind!=='mock'&&Number.isFinite(p.value)&&Number.isFinite(Date.parse(p.date))&&Date.parse(p.date)<=now&&now-Date.parse(p.date)<=30*86400000).sort((a,b)=>Date.parse(a.date)-Date.parse(b.date))}));
-  const ids=new Set(upstream.map(r=>r.id));
   return {...s,upstream,
     externalYields:(s.externalYields??[]).filter(r=>isCurrent(r,now)&&!isOwnContent(r)),
     competitorApy:(s.competitorApy??[]).filter(r=>!isOwnContent(r)&&isCurrent(r,now)&&['APR','APY'].includes(r.rateType)&&typeof r.productId==='string'&&r.productId.trim()&&!(r.platform==='Bybit'&&r.term!=='活期')),
     competitorActions:publicNews(s.competitorActions).filter(r=>isResearchCurrent(r,now)),
     mechanisms:publicNews(s.mechanisms).filter(r=>r.sourceUrl&&isCurrent(r,now,['fetchedAt'])),
     categoryHeat:publicNews(s.categoryHeat).filter(r=>r.sourceUrl&&isCurrent(r,now)),
-    productCoverage:isCurrent(s.productCoverage,now)?s.productCoverage:null,
-    ledger:{...s.ledger,products:(s.ledger?.products??[]).filter(r=>isCurrent(r,now,['listingDataAsOf','listingFetchedAt'])&&ids.has(r.anchorId))},
     sourceRuns:(s.sourceRuns??[]).filter(r=>isCurrent({...r,status:'fresh'},now,['fetchedAt']))};
 }
 
