@@ -9,3 +9,25 @@ test('mixed immutable bytes refuse fresh render, retaining same dated prior',asy
 test('corrupt cold cache cannot pass',async()=>{const c=cache();c.setItem(`earn-public-last-good:${owner}/${repo}/${branch}/`,JSON.stringify({schemaVersion:'earn-public-cache/1.0',body:'{}',sha256:'bad'}));await assert.rejects(loadPublicBranch(owner,repo,branch,()=>Promise.reject(Error('offline')),null,Date.now(),{cache:c}))});
 
 test('fallback retains actual snapshot commit and reports attempted newer head separately',async()=>{const c=cache();await loadPublicBranch(owner,repo,branch,fetcher,null,Date.now(),{cache:c});const newer='b'.repeat(40);const fail=async u=>String(u).includes('api.github.com')?Response.json({ref:`refs/heads/${branch}`,object:{type:'commit',sha:newer}}):new Response('{}',{status:500});const b=await loadPublicBranch(owner,repo,branch,fail,null,Date.now(),{cache:c});assert.equal(b.meta.deliveryCommit,sha);assert.equal(b.meta.attemptCommit,newer);assert.equal(b.meta.cachedFallback,true)});
+
+test('offline fallback keeps the newest verified snapshot across cache and page state',async t=>{
+  for(const [name,generatedAt,expectedRunId] of [
+    ['older bundled page state','2026-09-30T01:10:00Z',runId],
+    ['newer page state','2026-10-02T01:10:00Z','page-run'],
+    ['equal dates retain page state','2026-10-01T01:10:00Z','page-run'],
+  ])await t.test(name,async()=>{
+    const c=cache();
+    const saved=await loadPublicBranch(owner,repo,branch,fetcher,null,Date.now(),{cache:c});
+    const page={...saved,meta:{...saved.meta,runId:'page-run',releaseId:'page-release',generatedAt,deliveryCommit:'c'.repeat(40)}};
+    const key=`earn-public-last-good:${owner}/${repo}/${branch}/`,before=c.getItem(key);
+    const result=await loadPublicBranch(owner,repo,branch,()=>Promise.reject(Error('offline')),page,Date.parse('2026-10-03T04:00:00Z'),{cache:c});
+    assert.equal(result.meta.runId,expectedRunId);
+    const expected=expectedRunId===runId?saved:page;
+    assert.equal(result.meta.generatedAt,expected.meta.generatedAt);
+    assert.equal(result.meta.deliveryCommit,expected.meta.deliveryCommit);
+    assert.equal(result.meta.cachedFallback,true);
+    assert.equal(result.meta.deliveryMismatch,true);
+    assert.equal(result.meta.missedOrStale,true);
+    assert.equal(c.getItem(key),before);
+  });
+});

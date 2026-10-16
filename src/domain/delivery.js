@@ -56,7 +56,10 @@ export async function loadBoundRelease(base, fetcher=fetch, previous=null, now=D
     await saveCache(result);
     return result;
   } catch(error) {
-    previous=previous??await cachedPrevious();
+    const cached=await cachedPrevious();
+    // The page may still show its bundled baseline while another visit cached
+    // a newer verified release. Never let either fallback roll the other back.
+    if(cached&&(!previous||Date.parse(cached.meta.generatedAt)>Date.parse(previous.meta.generatedAt)))previous=cached;
     if(!previous)throw error;
     previous=validatePublicSnapshot(previous);
     return {...previous,meta:{...previous.meta,latestAttempt:attempt,latestAttemptRunId:attempt?.runId??null,
